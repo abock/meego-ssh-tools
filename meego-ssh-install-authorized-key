@@ -31,7 +31,7 @@ test -f "$PUBKEY_FILE" || {
 	exit 1
 }
 
-if ssh -p $MEEGO_PORT $USER@$MEEGO_HOST 'mkdir -p "$HOME/.ssh"; echo "'$(cat "$PUBKEY_FILE")'" > "$HOME/.ssh/authorized_keys"'; then
+if ssh -p $MEEGO_PORT $USER@$MEEGO_HOST 'mkdir -p "$HOME/.ssh"; echo "'$(cat "$PUBKEY_FILE")'" > "$HOME/.ssh/authorized_keys"; chmod 0700 "$HOME/.ssh"; chmod 0644 "$HOME/.ssh/authorized_keys"'; then
 	echo "Public key installed."
 else
 	echo "Error installing public key."
