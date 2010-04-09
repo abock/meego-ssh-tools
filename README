@@ -1,0 +1,48 @@
+MeeGo SSH Tools
+---------------
+
+Written by Aaron Bockover <abockover@novell.com>
+Copyright 2010 Novell
+Released under the MIT X11 license.
+
+
+Tools for the Target MeeGo Machine:
+
+  meego-ssh-setup-target    First you will need to run this script on any
+                            MeeGo machines you'll want to work with. This
+                            script takes care of installing and SSH server,
+                            setting it up, and advertising the machine as a
+                            MeeGo device over Avahi so it can be located by
+                            the tools below.
+
+Tools for the Development Machine:
+
+  meego-ssh-setup    Locates MeeGo machines on the local network, and
+                     configures the other tools to use the selected machine.
+
+                     Run this script at least once, and any time you want
+                     either want to work on a different machine, or the
+                     existing machine's network configuration has changed.
+
+  meego-ssh-install-authorized-key
+
+                     Run this each time you set up a new machine, after you
+                     have run meego-ssh-setup to select that machine. Run
+                     it once for root, once for the user you set up on the
+                     MeeGo machine. This tool will install your public key
+                     into ~/.ssh/authorized_keys.
+
+  meego-ssh          Proxy SSH commands to the selected MeeGo machine, for
+                     example:
+
+                       meego-ssh killall -9 mutter
+
+                        -or as a different remote user-
+
+                       meego-ssh -l aaron echo \$USER
+
+  meego-scp          Send files to the selected MeeGo machine, for example:
+
+                       meego-scp "Foo" "Bar with Spaces" :
+                       meego-scp -r directory /usr/share
+
