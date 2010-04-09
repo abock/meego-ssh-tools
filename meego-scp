@@ -17,7 +17,7 @@ user = 'root'
 set_user = False
 scp_args_left = []
 scp_arg_right = sys.argv[-1]
-if scp_arg_right == sys.argv[0]:
+if scp_arg_right == ':' or scp_arg_right == sys.argv[0]:
 	scp_arg_right = ''
 
 for arg in sys.argv[1:-1]:
@@ -33,6 +33,6 @@ for arg in sys.argv[1:-1]:
 
 command = ['scp', '-P', port]
 [command.append (arg) for arg in scp_args_left]
-command.append ('%s@%s%s' % (user, host, scp_arg_right))
+command.append ('%s@%s:%s' % (user, host, scp_arg_right))
 print command
 sys.exit (subprocess.call (command))

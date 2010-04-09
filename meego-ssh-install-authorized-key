@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+USER="$1"
+PUBKEY_FILE="$2"
+
+function usage {
+	echo "usage: $0 [remote_user [pubkey_file]]"
+	echo
+	echo "   remote_user     username on remote machine"
+	echo
+	echo "   pubkey_file     local public key to install"
+	echo "                   on the remote machine"
+	echo "                   (~/.ssh/id_rsa.pub)"
+	echo
+	exit 1
+}
+
+test -f "$HOME/.meego-ssh-rc" || {
+	echo "Error: meego-ssh RC file not found. Please run meego-ssh-setup."
+	exit 1
+}
+
+MEEGO_HOST=$(cat "$HOME/.meego-ssh-rc")
+MEEGO_PORT="${MEEGO_HOST#*:}"
+MEEGO_HOST="${MEEGO_HOST%:*}"
+
+test -z "$USER" -o "$USER" = "--help" && usage
+test -z "$PUBKEY_FILE" && PUBKEY_FILE="$HOME/.ssh/id_rsa.pub"
+test -f "$PUBKEY_FILE" || {
+	echo "Error: public key $PUBKEY_FILE does not exist."
+	exit 1
+}
+
+if ssh -p $MEEGO_PORT $USER@$MEEGO_HOST 'mkdir -p "$HOME/.ssh"; echo "'$(cat "$PUBKEY_FILE")'" > "$HOME/.ssh/authorized_keys"'; then
+	echo "Public key installed."
+else
+	echo "Error installing public key."
+	exit 1
+fi

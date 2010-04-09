@@ -1,6 +1,7 @@
 SOURCE_TARGETS = \
 	meego-scp \
-	meego-ssh-setup
+	meego-ssh-setup \
+	meego-ssh-install-authorized-key
 
 TARGET_TARGETS = \
 	meego-ssh-setup-target

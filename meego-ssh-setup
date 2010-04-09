@@ -128,7 +128,7 @@ if __name__ == '__main__':
 
 	print 'Generating meego-scp RC file for this host...'
 	
-	rcfile = os.path.join (os.path.expanduser ('~'), '.meego-scp-rc')
+	rcfile = os.path.join (os.path.expanduser ('~'), '.meego-ssh-rc')
 	fp = open (rcfile, 'w')
 	fp.write ('%s:%s' % (hosts[index]['address'], hosts[index]['port']))
 	fp.close ()
