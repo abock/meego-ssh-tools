@@ -1,0 +1,17 @@
+#!/usr/bin/env python
+
+import os
+import sys
+import subprocess
+
+try:
+	host, port = open (os.path.join (os.path.expanduser ('~'),
+		'.meego-ssh-rc')).read ().split (':', 1)
+except:
+	print 'meego-ssh has not been configured. Run meego-ssh-setup first.'
+	sys.exit (1)
+
+command = ['ssh', '-p', port, host]
+[command.append (arg) for arg in sys.argv[1:]]
+print command
+sys.exit (subprocess.call (command))

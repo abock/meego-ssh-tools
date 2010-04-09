@@ -7,9 +7,9 @@ import subprocess
 try:
 	user = 'root'
 	host, port = open (os.path.join (os.path.expanduser ('~'),
-		'.meego-scp-rc')).read ().split (':', 1)
+		'.meego-ssh-rc')).read ().split (':', 1)
 except:
-	print 'meego-scp has not been configured. Run meego-scp-setup first.'
+	print 'meego-scp has not been configured. Run meego-ssh-setup first.'
 	sys.exit (1)
 
 process_self_args = True
