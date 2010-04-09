@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+
+function bail {
+	echo "Error: $@" 1>&2
+	exit 1
+}
+
+if ! rpm -q openssh-server &>/dev/null; then
+	echo "Installing openssh-server..."
+	zypper in openssh-server
+fi
+
+echo "Ensuring SSH is running and will started by default..."
+chkconfig sshd on
+/etc/init.d/sshd start
+
+echo "Generating Avahi SSH service file..."
+{ cat <<EOF
+<?xml version="1.0" standalone='no'?><!--*-nxml-*-->
+<!DOCTYPE service-group SYSTEM "avahi-service.dtd">
+<service-group>
+  <name replace-wildcards="yes">MeeGo Development SSH on %h</name>
+  <service>
+    <type>_ssh._tcp</type>
+    <port>22</port>
+    <txt-record>system-product-name=$(dmidecode -s system-product-name | sed -r 's, +$,,g')</txt-record>
+    <txt-record>system-manufacturer=$(dmidecode -s system-manufacturer | sed -r 's, +$,,g')</txt-record>
+    <txt-record>system-uuid=$(dmidecode -s system-uuid | sed -r 's, +$,,g')</txt-record>
+    <txt-record>meego-release=$(cat /etc/meego-release | head -n1)</txt-record>
+  </service>
+</service-group>
+EOF
+} > /etc/avahi/services/ssh.service
+
+echo "Reloading Avahi configuration..."
+avahi-daemon -r
+
+echo "Preparing SSH directory..."
+mkdir -p /root/.ssh
+
+echo "MeeGo is ready - run the tool on your development machine to finish setup."

@@ -1,0 +1,136 @@
+#!/usr/bin/env python
+
+import os
+import sys
+import dbus
+import gobject
+from dbus.mainloop.glib import DBusGMainLoop
+
+class AvahiServiceCollector:
+	def __init__ (self, type):
+		# Set up DBus/GLib and fetch the system bus
+		DBusGMainLoop (set_as_default = True)
+		self.bus = dbus.SystemBus ()
+
+		self.hosts = {}
+		self.resolvers = []
+
+		# Get the Avahi Server
+		self.server = dbus.Interface (
+			self.bus.get_object ('org.freedesktop.Avahi', '/'),
+			'org.freedesktop.Avahi.Server')
+
+		# Create a service browser
+		self.browser = dbus.Interface (
+			self.bus.get_object ('org.freedesktop.Avahi',
+			self.server.ServiceBrowserNew (-1, -1, type, 'local',
+				dbus.UInt32 (0))),
+			'org.freedesktop.Avahi.ServiceBrowser')
+
+		self.browser.connect_to_signal ('ItemNew', self.on_service_new)
+		self.browser.connect_to_signal ('AllForNow', self.on_all_for_now)
+		self.browser.connect_to_signal ('ItemRemove', self.on_service_remove)
+
+	def run (self):
+		self.loop = gobject.MainLoop ()
+		self.loop.run ()
+
+	def make_id (self, name, domain):
+		return '%s.%s' % (domain, name)
+
+	def on_all_for_now (self):
+		for resolver in self.resolvers:
+			resolver.Free ()
+		self.browser.Free ()
+		self.loop.quit ()
+
+	def on_service_resolved (self, interface, protocol, name, type,
+		domain, host, aprotocol, address, port, txt, flags):
+		id = self.make_id (name, domain)
+		if id not in self.hosts:
+			self.hosts[id] = {
+				'name': name,
+				'domain': domain,
+				'address': address,
+				'port': port,
+				'txt': txt
+			}
+
+	def on_service_new (self, interface, protocol, name,
+		type, domain, flags):
+		resolver = dbus.Interface (
+			self.bus.get_object ('org.freedesktop.Avahi',
+			self.server.ServiceResolverNew (interface, protocol, name, type,
+				domain, 0, dbus.UInt32 (0))),
+			'org.freedesktop.Avahi.ServiceResolver')
+		resolver.connect_to_signal ('Found', self.on_service_resolved)
+		self.resolvers.append (resolver)
+
+	def on_service_remove (self, interface, protocol, name,
+		type, domain, flags):
+		try:
+			del self.hosts[self.make_id (name, domain)]
+		except:
+			pass
+
+if __name__ == '__main__':
+
+	print 'Locating MeeGo Development hosts...'
+
+	collector = AvahiServiceCollector ('_ssh._tcp')
+	collector.run ()
+	
+	index = 1
+	hosts = []
+
+	for id, record in collector.hosts.iteritems ():
+		txt_record = {}
+		for txt in record['txt']:
+			key, value = ''.join ([chr (byte) for byte in txt]).split ('=', 1)
+			txt_record[key] = value
+		if len (txt_record) <= 0 or \
+			'system-product-name' not in txt_record or \
+			'system-manufacturer' not in txt_record or \
+			'system-uuid' not in txt_record or \
+			'meego-release' not in txt_record:
+			continue
+
+		host = {
+			'name': '%s %s (%s)' % (
+				txt_record['system-manufacturer'],
+				txt_record['system-product-name'],
+				txt_record['system-uuid'].split ('-')[0]),
+			'meego_release': txt_record['meego-release'],
+			'address': record['address'],
+			'port': record['port']
+		}
+
+		hosts.append (host)
+
+		if index == 1:
+			print 'Found one or more hosts. Please make a selection:\n'
+		print '  %s) %s\n     %s\n' % \
+			(index, host['name'], host['meego_release'])
+		index = index + 1
+
+	if len (hosts) == 0:
+		print 'No MeeGo Development hosts found.'
+		print 'Have you run "meego-ssh-dev-setup" on the target MeeGo machine?'
+		sys.exit (1)
+	
+	index = -1
+	while index < 0 or index >= len (hosts):
+		sys.stdout.write ('MeeGo Host Selection (1): ')
+		try:
+			index = int (sys.stdin.readline ()) - 1
+		except:
+			index = -1
+
+	print 'Generating meego-scp RC file for this host...'
+	
+	rcfile = os.path.join (os.path.expanduser ('~'), '.meego-scp-rc')
+	fp = open (rcfile, 'w')
+	fp.write ('%s:%s' % (hosts[index]['address'], hosts[index]['port']))
+	fp.close ()
+
+	print 'You may now use meego-scp to transfer files to this host.'
