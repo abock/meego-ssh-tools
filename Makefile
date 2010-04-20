@@ -34,3 +34,8 @@ dist:
 		$(PACKAGE)-$(VERSION)
 	tar cfj $(PACKAGE)-$(VERSION).tar.bz2 $(PACKAGE)-$(VERSION)
 	rm -rf $(PACKAGE)-$(VERSION)
+
+git-tag:
+	git tag -a -m "$(PACKAGE) $(VERSION) release" "$(VERSION)"
+	git push origin "$(VERSION)"
+
