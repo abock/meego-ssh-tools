@@ -1,0 +1,80 @@
+#!/usr/bin/env python
+
+import os
+import sys
+import subprocess
+from optparse import OptionParser
+
+try:
+	host, port = open (os.path.join (os.path.expanduser ('~'),
+		'.meego-ssh-rc')).read ().split (':', 1)
+except:
+	print >> sys.stderr, \
+        'meego-screenshot has not been configured. Run meego-ssh-setup first.'
+	sys.exit (1)
+
+from optparse import OptionParser
+parser = OptionParser ('usage: %prog [options] <path-to-screenshot>')
+parser.add_option ('-n', '--no-view',
+    action = 'store_true', default = False, dest = 'no_view',
+    help = 'Do not show the screenshot in Eye of GNOME')
+cmd_options, cmd_args = parser.parse_args ()
+
+if len (cmd_args) < 1:
+    parser.print_help ()
+    sys.exit (1)
+
+local_path = os.path.abspath (os.path.expanduser (cmd_args[0]))
+remote_path = os.path.join ('/tmp', os.path.basename (local_path))
+
+try:
+    with open (local_path, 'wb') as fp:
+        pass
+except:
+    print >> sys.stderr, 'Cannot open %s for writing.' % local_path
+    sys.exit (1)
+finally:
+    try:
+        os.unlink (local_path)
+    except:
+        pass
+
+def shexec (*argv):
+    with open ('/dev/null', 'r') as devnull:
+        ret = subprocess.call (argv, stdout = devnull, stderr = devnull)
+        if ret != 0:
+            print >> sys.stderr, 'Failed to run (%d): %s' % \
+                (ret, ' '.join (argv))
+            sys.exit (ret)
+
+user = 'root'
+for proc in subprocess.Popen (['ssh', '-p', port, host, '-l', 'root',
+    'ps', 'aux'], stdout = subprocess.PIPE).communicate ()[0].split ('\n'):
+    if '/usr/bin/mutter' in proc:
+        user = proc.split (' ')[0]
+        break
+
+shexec (
+    'ssh', '-p', port, '-l', user, host,
+    'DISPLAY=:0.0', 'import', '-window', 'root', remote_path
+)
+
+shexec (
+    'scp', '-P', port, '%s@%s:%s' % (user, host, remote_path), local_path
+)
+
+shexec (
+    'ssh', '-p', port, '-l', user, host,
+    'rm', '-f', '--', remote_path
+)
+
+if cmd_options.no_view:
+    sys.exit (0)
+
+try:
+    with open ('/dev/null', 'r') as devnull:
+        subprocess.Popen (['eog', local_path],
+            stdout = devnull, stderr = devnull)
+except:
+    pass
+
