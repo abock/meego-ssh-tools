@@ -1,5 +1,5 @@
 PACKAGE = meego-ssh-tools
-VERSION = 0.1
+VERSION = 0.2
 
 SOURCE_TARGETS = \
 	meego-scp \
