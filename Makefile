@@ -4,6 +4,7 @@ VERSION = 0.2
 SOURCE_TARGETS = \
 	meego-scp \
 	meego-ssh \
+	meego-screenshot \
 	meego-ssh-setup \
 	meego-ssh-install-authorized-key
 
