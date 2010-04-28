@@ -1,5 +1,5 @@
 PACKAGE = meego-ssh-tools
-VERSION = 0.2
+VERSION = 0.3
 
 SOURCE_TARGETS = \
 	meego-scp \
@@ -7,13 +7,6 @@ SOURCE_TARGETS = \
 	meego-screenshot \
 	meego-ssh-setup \
 	meego-ssh-install-authorized-key
-
-TARGET_TARGETS = \
-	meego-ssh-setup-target
-
-EXTRA_DIST = \
-	COPYING \
-	README
 
 all:
 	@echo "Run make install-dev to install the devel scripts or run"
@@ -26,15 +19,8 @@ install-dev: $(SOURCE_TARGETS)
 	done
 
 dist:
-	mkdir $(PACKAGE)-$(VERSION)
-	cp \
-		$(SOURCE_TARGETS) \
-		$(TARGET_TARGETS) \
-		$(EXTRA_DIST) \
-		Makefile \
-		$(PACKAGE)-$(VERSION)
-	tar cfj $(PACKAGE)-$(VERSION).tar.bz2 $(PACKAGE)-$(VERSION)
-	rm -rf $(PACKAGE)-$(VERSION)
+	git archive --format=tar --prefix=$(PACKAGE)-$(VERSION)/ HEAD \
+		| bzip2 -f > $(PACKAGE)-$(VERSION).tar.bz2
 
 git-tag:
 	git tag -a -m "$(PACKAGE) $(VERSION) release" "$(VERSION)"
