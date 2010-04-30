@@ -31,6 +31,14 @@ test -f "$PUBKEY_FILE" || {
 	exit 1
 }
 
+if ssh -p $MEEGO_PORT $USER@$MEEGO_HOST 'echo ok' 2>&1 | grep -q 'Host key verification failed.'; then
+	echo "Host verification failed. Removing old known_hosts entry."
+	awk '{ if ($0 !~ /^'"$MEEGO_HOST"'/) print }' \
+		< $HOME/.ssh/known_hosts \
+		> $HOME/.ssh/known_hosts.tmp
+	mv $HOME/.ssh/known_hosts.tmp $HOME/.ssh/known_hosts
+fi
+
 if ssh -p $MEEGO_PORT $USER@$MEEGO_HOST 'mkdir -p "$HOME/.ssh"; echo "'$(cat "$PUBKEY_FILE")'" > "$HOME/.ssh/authorized_keys"; chmod 0700 "$HOME/.ssh"; chmod 0644 "$HOME/.ssh/authorized_keys"'; then
 	echo "Public key installed."
 else
